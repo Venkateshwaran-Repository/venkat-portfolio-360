@@ -1,7 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LinkedIn, Upload, FileText } from "lucide-react";
+import { Linkedin, Upload, FileText } from "lucide-react";
 
 export const Projects = () => {
   const openLinkedIn = () => {
@@ -13,7 +13,7 @@ export const Projects = () => {
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-2xl font-bold">Project Portfolio</h2>
         <Button onClick={openLinkedIn} variant="outline" className="flex gap-2">
-          <LinkedIn className="w-4 h-4" />
+          <Linkedin className="w-4 h-4" />
           Connect on LinkedIn
         </Button>
       </div>
