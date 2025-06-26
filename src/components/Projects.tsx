@@ -7,10 +7,12 @@ import { Linkedin, Upload, FileText, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { StockAnalysisProposal } from "./StockAnalysisProposal";
+import { StockAnalysisPlatform } from "./StockAnalysisPlatform";
 
 export const Projects = () => {
   const [password, setPassword] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showPlatform, setShowPlatform] = useState(false);
   const { toast } = useToast();
 
   const openLinkedIn = () => {
@@ -22,7 +24,7 @@ export const Projects = () => {
       setIsAdmin(true);
       toast({
         title: "Access Granted",
-        description: "You now have admin access to view the stock analysis proposal.",
+        description: "You now have admin access to view the stock analysis content.",
       });
     } else {
       toast({
@@ -34,9 +36,34 @@ export const Projects = () => {
     setPassword("");
   };
 
+  const handleShowPlatform = () => {
+    setShowPlatform(true);
+  };
+
+  const handleBackToProposal = () => {
+    setShowPlatform(false);
+  };
+
+  // Show the stock analysis platform when requested
+  if (isAdmin && showPlatform) {
+    return <StockAnalysisPlatform onBack={handleBackToProposal} />;
+  }
+
   // Show the stock analysis proposal when admin is logged in
   if (isAdmin) {
-    return <StockAnalysisProposal />;
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <Button onClick={() => setIsAdmin(false)} variant="outline">
+            Back to Projects
+          </Button>
+          <Button onClick={handleShowPlatform} className="bg-green-600 hover:bg-green-700">
+            Launch Demo Platform
+          </Button>
+        </div>
+        <StockAnalysisProposal />
+      </div>
+    );
   }
 
   return (
@@ -65,7 +92,7 @@ export const Projects = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-muted-foreground">Enter the admin password to access special content:</p>
+                <p className="text-muted-foreground">Enter the admin password to access the stock analysis platform:</p>
                 <div className="flex gap-2">
                   <Input
                     type="password"
@@ -100,7 +127,7 @@ export const Projects = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-muted-foreground">Enter the admin password to access special content:</p>
+                <p className="text-muted-foreground">Enter the admin password to access the stock analysis platform:</p>
                 <div className="flex gap-2">
                   <Input
                     type="password"
