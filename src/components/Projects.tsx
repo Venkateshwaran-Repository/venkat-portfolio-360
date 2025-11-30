@@ -178,32 +178,6 @@ export const Projects = () => {
         </Button>
       </div>
 
-      {/* Stock Analysis Password Protected Section */}
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Lock className="w-5 h-5" />
-            Stock Analysis Platform - Admin Access
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-muted-foreground">
-            Enter the admin password to access the advanced stock analysis and prediction platform:
-          </p>
-          <div className="flex gap-2">
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
-              placeholder="Enter password"
-              className="flex-1"
-            />
-            <Button onClick={handlePasswordSubmit}>Submit</Button>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* File Upload Section */}
       <Card className="border-dashed border-2 hover:border-primary/50 transition-colors">
         <CardHeader>
