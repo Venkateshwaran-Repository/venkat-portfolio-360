@@ -16,38 +16,15 @@ interface UploadedFile {
   size: number;
   uploadDate: Date;
   category: string;
+  fileData?: string; // base64 data URL for the actual file content
+  file?: File; // store the actual file object
 }
 
 export const Projects = () => {
   const [password, setPassword] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [showPlatform, setShowPlatform] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([
-    {
-      id: "1",
-      name: "PowerShell_Automation_Script.ps1",
-      type: "script",
-      size: 2048,
-      uploadDate: new Date("2024-01-15"),
-      category: "PowerShell"
-    },
-    {
-      id: "2",
-      name: "SCCM_Deployment_Guide.pdf",
-      type: "document",
-      size: 4096,
-      uploadDate: new Date("2024-01-20"),
-      category: "Documentation"
-    },
-    {
-      id: "3",
-      name: "Package_Configuration.xml",
-      type: "config",
-      size: 1024,
-      uploadDate: new Date("2024-02-01"),
-      category: "Configuration"
-    }
-  ]);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const { toast } = useToast();
 
   const openLinkedIn = () => {
@@ -79,23 +56,37 @@ export const Projects = () => {
     setShowPlatform(false);
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (files) {
-      const newFiles: UploadedFile[] = Array.from(files).map((file) => ({
-        id: Math.random().toString(36).substr(2, 9),
-        name: file.name,
-        type: getFileType(file.name),
-        size: file.size,
-        uploadDate: new Date(),
-        category: getCategoryFromFileName(file.name)
-      }));
+    if (files && files.length > 0) {
+      const filePromises = Array.from(files).map((file) => {
+        return new Promise<UploadedFile>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            resolve({
+              id: Math.random().toString(36).substr(2, 9),
+              name: file.name,
+              type: getFileType(file.name),
+              size: file.size,
+              uploadDate: new Date(),
+              category: getCategoryFromFileName(file.name),
+              fileData: e.target?.result as string,
+              file: file
+            });
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+
+      const newFiles = await Promise.all(filePromises);
       setUploadedFiles([...uploadedFiles, ...newFiles]);
       toast({
         title: "Files Uploaded",
         description: `${files.length} file(s) uploaded successfully.`,
       });
     }
+    // Reset the input so the same file can be uploaded again if needed
+    event.target.value = '';
   };
 
   const getFileType = (fileName: string) => {
@@ -122,6 +113,29 @@ export const Projects = () => {
       title: "File Deleted",
       description: "File removed successfully.",
     });
+  };
+
+  const handleDownloadFile = (file: UploadedFile) => {
+    if (file.fileData) {
+      // Create a temporary link element and trigger download
+      const link = document.createElement('a');
+      link.href = file.fileData;
+      link.download = file.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: "Download Started",
+        description: `Downloading ${file.name}`,
+      });
+    } else {
+      toast({
+        title: "Download Failed",
+        description: "File data not available.",
+        variant: "destructive",
+      });
+    }
   };
 
   const formatFileSize = (bytes: number) => {
@@ -220,7 +234,12 @@ export const Projects = () => {
         <h3 className="text-xl font-semibold mb-4">
           Uploaded Files ({uploadedFiles.length})
         </h3>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {uploadedFiles.length === 0 ? (
+          <Card className="p-8 text-center">
+            <p className="text-muted-foreground">No files uploaded yet. Upload your first file to get started!</p>
+          </Card>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {uploadedFiles.map((file) => (
             <Card key={file.id} className="hover:shadow-lg transition-all hover:scale-[1.02]">
               <CardContent className="pt-6">
@@ -250,6 +269,7 @@ export const Projects = () => {
                     size="sm" 
                     variant="outline" 
                     className="flex-1 text-xs"
+                    onClick={() => handleDownloadFile(file)}
                   >
                     <Download className="w-3 h-3 mr-1" />
                     Download
@@ -266,7 +286,8 @@ export const Projects = () => {
               </CardContent>
             </Card>
           ))}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
