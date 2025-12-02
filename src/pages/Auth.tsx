@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function Auth() {
+  const ALLOWED_EMAIL = "venkatappu.tkp@gmail.com";
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
@@ -25,13 +26,24 @@ export default function Auth() {
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate email
+    if (email !== ALLOWED_EMAIL) {
+      toast({
+        title: "Access Denied",
+        description: "You are not authorized to access this system.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setLoading(true);
 
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          shouldCreateUser: false,
         },
       });
 
@@ -40,12 +52,12 @@ export default function Auth() {
       setOtpSent(true);
       toast({
         title: "OTP Sent!",
-        description: "Check your email for the verification code.",
+        description: "Check your email for the 6-digit verification code.",
       });
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to send OTP. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -86,11 +98,11 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Login with OTP</CardTitle>
+          <CardTitle>Admin Login</CardTitle>
           <CardDescription>
             {otpSent
               ? "Enter the 6-digit code sent to your email"
-              : "Enter your email to receive a one-time password"}
+              : "Enter your authorized email to receive a one-time password"}
           </CardDescription>
         </CardHeader>
         <CardContent>
