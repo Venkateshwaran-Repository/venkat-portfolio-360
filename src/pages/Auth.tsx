@@ -12,6 +12,7 @@ export default function Auth() {
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -23,6 +24,14 @@ export default function Auth() {
       }
     });
   }, [navigate]);
+
+  useEffect(() => {
+    // Cooldown timer for resend button
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +59,7 @@ export default function Auth() {
       if (error) throw error;
 
       setOtpSent(true);
+      setResendCooldown(60); // 60 second cooldown
       toast({
         title: "OTP Sent!",
         description: "Check your email for the 6-digit verification code.",
@@ -58,6 +68,34 @@ export default function Auth() {
       toast({
         title: "Error",
         description: error.message || "Failed to send OTP. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false,
+        },
+      });
+
+      if (error) throw error;
+
+      setResendCooldown(60);
+      toast({
+        title: "OTP Resent!",
+        description: "A new code has been sent to your email.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to resend OTP. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -146,17 +184,29 @@ export default function Auth() {
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Verifying..." : "Verify OTP"}
               </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                className="w-full"
-                onClick={() => {
-                  setOtpSent(false);
-                  setOtp("");
-                }}
-              >
-                Use different email
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={handleResendOTP}
+                  disabled={loading || resendCooldown > 0}
+                >
+                  {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend OTP"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="flex-1"
+                  onClick={() => {
+                    setOtpSent(false);
+                    setOtp("");
+                    setResendCooldown(0);
+                  }}
+                >
+                  Change Email
+                </Button>
+              </div>
             </form>
           )}
         </CardContent>
