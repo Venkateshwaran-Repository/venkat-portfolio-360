@@ -25,6 +25,8 @@ export const Projects = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const SESSION_TIMEOUT = 15 * 60 * 1000; // 15 minutes in milliseconds
+  const [lastActivity, setLastActivity] = useState(Date.now());
 
   useEffect(() => {
     // Check current user
@@ -41,6 +43,36 @@ export const Projects = () => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Session timeout logic
+  useEffect(() => {
+    if (!user) return;
+
+    const updateActivity = () => setLastActivity(Date.now());
+    
+    // Track user activity
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+    events.forEach(event => window.addEventListener(event, updateActivity));
+
+    // Check for inactivity every minute
+    const interval = setInterval(() => {
+      const inactiveTime = Date.now() - lastActivity;
+      
+      if (inactiveTime > SESSION_TIMEOUT) {
+        handleLogout();
+        toast({
+          title: "Session Expired",
+          description: "You have been logged out due to inactivity.",
+          variant: "destructive",
+        });
+      }
+    }, 60000); // Check every minute
+
+    return () => {
+      events.forEach(event => window.removeEventListener(event, updateActivity));
+      clearInterval(interval);
+    };
+  }, [user, lastActivity]);
 
   const loadFiles = async () => {
     try {
