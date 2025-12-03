@@ -61,13 +61,13 @@ export default function Auth() {
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (email !== ALLOWED_EMAIL) {
       toast({
         title: "Access Denied",
-        description: "Only the authorized email can create an account.",
+        description: "Only the authorized email can reset password.",
         variant: "destructive",
       });
       return;
@@ -76,24 +76,47 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-        },
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth`,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Email Sent!",
+        description: "Check your email for the password reset link.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send reset email.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: password,
       });
 
       if (error) throw error;
 
       toast({
         title: "Success!",
-        description: "Account created! You can now login.",
+        description: "Password updated! You can now login.",
       });
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to create account.",
+        description: error.message || "Failed to update password.",
         variant: "destructive",
       });
     } finally {
@@ -107,14 +130,15 @@ export default function Auth() {
         <CardHeader>
           <CardTitle>Admin Access</CardTitle>
           <CardDescription>
-            Login or create your account (one-time setup)
+            Login or reset your password
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="signup">Setup Account</TabsTrigger>
+              <TabsTrigger value="reset">Reset</TabsTrigger>
+              <TabsTrigger value="update">Set Password</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login">
@@ -139,8 +163,11 @@ export default function Auth() {
               </form>
             </TabsContent>
 
-            <TabsContent value="signup">
-              <form onSubmit={handleSignup} className="space-y-4">
+            <TabsContent value="reset">
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                <p className="text-sm text-muted-foreground mb-2">
+                  Enter your email to receive a password reset link.
+                </p>
                 <Input
                   type="email"
                   placeholder="Email address"
@@ -148,16 +175,27 @@ export default function Auth() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Sending..." : "Send Reset Link"}
+                </Button>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="update">
+              <form onSubmit={handleUpdatePassword} className="space-y-4">
+                <p className="text-sm text-muted-foreground mb-2">
+                  After clicking the reset link in your email, enter your new password here.
+                </p>
                 <Input
                   type="password"
-                  placeholder="Password"
+                  placeholder="New password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
                 />
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Creating..." : "Create Account"}
+                  {loading ? "Updating..." : "Update Password"}
                 </Button>
               </form>
             </TabsContent>
