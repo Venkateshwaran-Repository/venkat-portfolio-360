@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Linkedin, FileText, File, Download } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
 
 interface ShowcaseFile {
   id: string;
@@ -15,6 +14,9 @@ interface ShowcaseFile {
   category: string;
   created_at: string;
 }
+
+const SUPABASE_URL = "https://lxwkuqbjuntqtgigqfwm.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4d2t1cWJqdW50cXRnaWdxZndtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1OTI1MDQsImV4cCI6MjA4MDE2ODUwNH0.s1R_dOtiToVK2FZ0FzXF0d1tWb8mIigywupqdCini7k";
 
 export const Projects = () => {
   const [files, setFiles] = useState<ShowcaseFile[]>([]);
@@ -27,12 +29,21 @@ export const Projects = () => {
 
   const loadFiles = async () => {
     try {
-      const { data, error } = await supabase
-        .from('showcase_files')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/showcase_files?select=*&order=created_at.desc`,
+        {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+        }
+      );
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch files');
+      }
+
+      const data = await response.json();
       setFiles(data || []);
     } catch (error) {
       console.error('Error loading files:', error);
@@ -52,20 +63,15 @@ export const Projects = () => {
 
   const handleDownloadFile = async (file: ShowcaseFile) => {
     try {
-      const { data, error } = await supabase.storage
-        .from('showcase-files')
-        .download(file.storage_path);
-
-      if (error) throw error;
-
-      const url = URL.createObjectURL(data);
+      const downloadUrl = `${SUPABASE_URL}/storage/v1/object/public/showcase-files/${encodeURIComponent(file.storage_path)}`;
+      
       const link = document.createElement('a');
-      link.href = url;
+      link.href = downloadUrl;
       link.download = file.name;
+      link.target = '_blank';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(url);
 
       toast({
         title: "Download Started",
